@@ -3,59 +3,43 @@ export class ProductManager {
     this.state = state;
     this.env = env;
     this.products = [];
-    this.hidden = new Set();
   }
 
   async fetch(request) {
     const url = new URL(request.url);
-    const { pathname } = url;
+    const pathname = url.pathname;
 
-    if (pathname === "/add" && request.method === "POST") {
+    if (request.method === 'POST' && pathname === '/add') {
       const data = await request.json();
-      const id = crypto.randomUUID();
-      const product = { id, ...data };
-      this.products.push(product);
-      return new Response(JSON.stringify({ success: true, product }), { status: 200 });
+      this.products.push(data);
+      return new Response(JSON.stringify({ success: true, product: data }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    if (pathname.startsWith("/edit/") && request.method === "PUT") {
-      const id = pathname.split("/")[2];
+    if (request.method === 'PUT' && pathname.startsWith('/edit/')) {
+      const id = pathname.split('/edit/')[1];
       const data = await request.json();
       const index = this.products.findIndex(p => p.id === id);
-      if (index === -1) return new Response("Not found", { status: 404 });
-      this.products[index] = { ...this.products[index], ...data };
-      return new Response(JSON.stringify({ success: true, product: this.products[index] }), { status: 200 });
+      if (index !== -1) {
+        this.products[index] = { ...this.products[index], ...data };
+        return new Response(JSON.stringify({ success: true, product: this.products[index] }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } else {
+        return new Response(JSON.stringify({ error: 'Product not found' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
-    if (pathname.startsWith("/hide/") && request.method === "PUT") {
-      const id = pathname.split("/")[2];
-      this.hidden.add(id);
-      return new Response(JSON.stringify({ success: true, hidden: Array.from(this.hidden) }), { status: 200 });
+    if (request.method === 'GET' && pathname === '/products') {
+      return new Response(JSON.stringify(this.products), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    if (pathname.startsWith("/show/") && request.method === "PUT") {
-      const id = pathname.split("/")[2];
-      this.hidden.delete(id);
-      return new Response(JSON.stringify({ success: true, hidden: Array.from(this.hidden) }), { status: 200 });
-    }
-
-    if (pathname === "/hidden" && request.method === "GET") {
-      const hiddenProducts = this.products.filter(p => this.hidden.has(p.id));
-      return new Response(JSON.stringify(hiddenProducts), { status: 200 });
-    }
-
-    if (pathname === "/products" && request.method === "GET") {
-      const visibleProducts = this.products.filter(p => !this.hidden.has(p.id));
-      return new Response(JSON.stringify(visibleProducts), { status: 200 });
-    }
-
-    if (pathname.startsWith("/product/") && request.method === "GET") {
-      const id = pathname.split("/")[2];
-      const product = this.products.find(p => p.id === id);
-      if (!product) return new Response("Not found", { status: 404 });
-      return new Response(JSON.stringify(product), { status: 200 });
-    }
-
-    return new Response("Not found", { status: 404 });
+    return new Response('Not Found', { status: 404 });
   }
 }
