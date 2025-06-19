@@ -1,0 +1,10 @@
+name = "hot-essences-api"
+main = "index.js"
+compatibility_date = "2023-01-01"
+
+[[durable_objects.bindings]]
+name = "PRODUCT_MANAGER"
+class_name = "ProductManager"
+
+[build]
+upload.format = "modules"
