@@ -1,0 +1,27 @@
+import { ProductManager } from './durable-object.js';
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    const id = env.PRODUCT_MANAGER.idFromName('inventory');
+    const obj = env.PRODUCT_MANAGER.get(id);
+
+    if (request.method === 'POST' && pathname === '/add') {
+      return obj.fetch(request);
+    }
+
+    if (request.method === 'PUT' && pathname.startsWith('/edit/')) {
+      return obj.fetch(request);
+    }
+
+    if (request.method === 'GET' && pathname === '/products') {
+      return obj.fetch(request);
+    }
+
+    return new Response('Not Found', { status: 404 });
+  },
+};
+
+export { ProductManager } from './durable-object.js';
